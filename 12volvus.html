@@ -1,0 +1,897 @@
+<style>
+	canvas {
+        background-color: transparent;
+        padding: 0;
+        margin: auto;
+        display: block;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        border:2px solid #000000;
+		min-height: 90%;
+		max-width: 80%;
+    }
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<div id="wrapper">
+	<canvas width="720px" height="720px" id="interface" style="z-index: 5;"></canvas>
+	<canvas width="720px" height="720px" id="player" style="z-index: 4;"></canvas>
+	<canvas width="720px" height="720px" id="popups" style="z-index: 3;"></canvas>
+	<canvas width="720px" height="720px" id="tile_set" style="z-index: 2;"></canvas>
+	<canvas width="720px" height="720px" id="background" style="z-index: 1;"></canvas>
+</div>
+
+<script>
+
+	var canvas01 = document.getElementById("background");
+	var x_offset = canvas01.width / 2;
+	var y_offset = canvas01.height / 2;
+
+function CreateTiles(ring, ring_props, stats)
+{
+	
+	var inner_ring = 200;
+	var outer_ring = 250;
+	
+	for (var i = 0; i < 12; i ++)
+	{
+		var draw_tile_switch = false;
+		do 
+		{
+			draw_tile_switch = DrawTile (
+				ring, 
+				[outer_ring * Math.cos(i * 30 * Math.PI / 180), outer_ring * Math.sin(i * 30 * Math.PI / 180)], 
+				[outer_ring * Math.cos(((i * 30) + 30) * Math.PI / 180), outer_ring * Math.sin(((i * 30) + 30) * Math.PI / 180)], 
+				[inner_ring * Math.cos(i * 30 * Math.PI / 180), inner_ring * Math.sin(i * 30 * Math.PI / 180)], 
+				[inner_ring * Math.cos(((i * 30) + 30) * Math.PI / 180), inner_ring * Math.sin(((i * 30) + 30) * Math.PI / 180)], 
+				[outer_ring * Math.cos(((i * 30) + 15) * Math.PI / 180), outer_ring * Math.sin(((i * 30) + 15) * Math.PI / 180)], 
+				i, 
+				ring_props
+			);
+		}
+		while (!draw_tile_switch);
+	}
+		
+    return true;
+	
+}
+
+function CreateBall ()
+{
+	var canvas04 = document.getElementById("player");
+	var ctx04 = canvas04.getContext("2d");
+	
+	ctx04.beginPath();
+	ctx04.arc(0 + x_offset, 0 + y_offset, 6, 0, 2 * Math.PI);
+	ctx04.fillStyle = "black";
+	ctx04.fill();
+	ctx04.closePath();
+	ctx04.stroke();
+	return true;
+}
+
+function DrawTile (ring, p1, p2, p3, p4, disp, i, ring_props)
+{
+	
+	var canvas02 = document.getElementById("tile_set");
+	var ctx02 = canvas02.getContext("2d");
+
+	for (var r = 0; r < ring.length; r++)
+	{
+		if (ring[r].index === i)
+		{
+			ring[r].p1 = [p1[0] + x_offset, p1[1] + y_offset];
+			ring[r].p2 = [p2[0] + x_offset, p2[1] + y_offset];
+			ring[r].p4 = [p4[0] + x_offset, p4[1] + y_offset];
+			ring[r].p3 = [p3[0] + x_offset, p3[1] + y_offset];
+			
+			ctx02.beginPath();
+			ctx02.font = "bold 16px sans-serif";
+			ctx02.fillStyle = "black";
+			ctx02.textAlign = "center";
+			ctx02.textBaseline = "middle";
+			ctx02.fillText(ring[r].name, (1.15 * disp[0]) + x_offset, (1.15 * disp[1]) + y_offset);
+
+			ctx02.beginPath();
+			ctx02.strokeStyle = "black";
+			ctx02.moveTo(p1[0] + x_offset, p1[1] + y_offset);
+			ctx02.lineTo(p2[0] + x_offset, p2[1] + y_offset);
+			ctx02.lineTo(p4[0] + x_offset, p4[1] + y_offset);
+			ctx02.lineTo(p3[0] + x_offset, p3[1] + y_offset);
+			ctx02.fillStyle = "tan";
+			if (i === ring_props.note_value_1 || i === ring_props.note_value_2 || i === ring_props.note_value_3)
+			{
+				ctx02.fillStyle = "yellow";
+			}
+			ctx02.fill();
+			ctx02.closePath();
+			ctx02.stroke();
+			break;
+		}
+	}
+
+    return true;
+	
+}
+
+function UpdateTiles (ring, ring_props, stats)
+{
+	var canvas02 = document.getElementById("tile_set");
+	var ctx02 = canvas02.getContext("2d");
+	ctx02.clearRect(0, 0, canvas02.width, canvas02.height);
+	
+	var inner_ring = 200;
+	var outer_ring = 250;
+	
+	for (var i = 0; i < 12; i ++)
+	{
+		var draw_tile_switch = false;
+		do 
+		{
+			draw_tile_switch = DrawTile (
+				ring, 
+				[outer_ring * Math.cos(((i * 30) + ring_props.tilt) * Math.PI / 180), outer_ring * Math.sin(((i * 30) + ring_props.tilt) * Math.PI / 180)], 
+				[outer_ring * Math.cos(((i * 30) + ring_props.tilt + 30) * Math.PI / 180), outer_ring * Math.sin(((i * 30) + ring_props.tilt + 30) * Math.PI / 180)], 
+				[inner_ring * Math.cos(((i * 30) + ring_props.tilt) * Math.PI / 180), inner_ring * Math.sin(((i * 30) + ring_props.tilt) * Math.PI / 180)], 
+				[inner_ring * Math.cos(((i * 30) + ring_props.tilt + 30) * Math.PI / 180), inner_ring * Math.sin(((i * 30) + ring_props.tilt + 30) * Math.PI / 180)], 
+				[outer_ring * Math.cos(((i * 30) + ring_props.tilt + 15) * Math.PI / 180), outer_ring * Math.sin(((i * 30) + ring_props.tilt + 15) * Math.PI / 180)], 
+				i,
+				ring_props
+			);
+		}
+		while (!draw_tile_switch);
+	}
+	return true;
+}
+
+function UpdateBall (x, y)
+{
+	
+		var canvas04 = document.getElementById("player");
+		var ctx04 = canvas04.getContext("2d");
+		ctx04.clearRect(0, 0, canvas04.width, canvas04.height);
+		
+		ctx04.beginPath();
+		ctx04.arc(x + x_offset, y + y_offset, 6, 0, 2 * Math.PI);
+		ctx04.fillStyle = "black";
+		ctx04.fill();
+		ctx04.closePath();
+		ctx04.stroke();
+				
+    return true;
+		
+}
+
+function CreateScore (stats)
+{
+	var canvas05 = document.getElementById("interface");
+	var ctx05 = canvas05.getContext("2d");
+	ctx05.clearRect(0, 0, canvas05.width / 2, canvas05.height / 2);
+	
+	ctx05.beginPath();
+	ctx05.font = "normal 28px sans-serif";
+	ctx05.fillStyle = "black";
+	ctx05.textAlign = "left";
+	ctx05.textBaseline = "top";
+	ctx05.fillText(stats.score, 40, 40);
+	ctx05.stroke();
+	
+	return true;
+}
+
+function CreateLives (stats)
+{
+	var canvas05 = document.getElementById("interface");
+	var ctx05 = canvas05.getContext("2d");
+	ctx05.clearRect(canvas05.width / 2, 0, canvas05.width, canvas05.height / 2);
+	
+	for (var i = 0; i < 5; i++)
+	{
+		ctx05.beginPath();
+		ctx05.font = "normal 28px sans-serif";
+		if (i < stats.lives)
+		{
+			ctx05.fillStyle = "black";
+		}
+		else
+		{
+			ctx05.fillStyle = "gray";
+		}
+		ctx05.textAlign = "right";
+		ctx05.textBaseline = "top";
+		ctx05.fillText("X", canvas05.width - 40 - (i * 40), 40);
+		ctx05.stroke();
+	}
+	
+	return true;
+}
+
+function UpdateScore (stats)
+{
+	var canvas05 = document.getElementById("interface");
+	var ctx05 = canvas05.getContext("2d");
+	ctx05.clearRect(0, 0, canvas05.width / 2, canvas05.height / 2);
+	
+	ctx05.beginPath();
+	ctx05.font = "normal 28px sans-serif";
+	ctx05.fillStyle = "black";
+	ctx05.textAlign = "left";
+	ctx05.textBaseline = "top";
+	ctx05.fillText(stats.score, 40, 40);
+	ctx05.stroke();
+	
+	return true;
+}
+
+function UpdateLives (stats)
+{
+	var canvas05 = document.getElementById("interface");
+	var ctx05 = canvas05.getContext("2d");
+	ctx05.clearRect(canvas05.width / 2, 0, canvas05.width, canvas05.height / 2);
+	
+	for (var i = 0; i < 5; i++)
+	{
+		ctx05.beginPath();
+		ctx05.font = "normal 28px sans-serif";
+		if (i < stats.lives)
+		{
+			ctx05.fillStyle = "black";
+		}
+		else
+		{
+			ctx05.fillStyle = "lightgray";
+		}
+		ctx05.textAlign = "right";
+		ctx05.textBaseline = "top";
+		ctx05.fillText("X", canvas05.width - 40 - (i * 40), 40);
+		ctx05.stroke();
+	}
+	
+	return true;
+}
+
+function Start (ring, ring_props, ball, stats) {
+	
+	var tick = 0;
+	var grace_tick = true;
+	
+	var update_score_switch = false;
+	do
+	{
+		update_score_switch = UpdateScore (stats);
+	}
+	while (!update_score_switch);
+	var update_lives_switch = false;
+	do
+	{
+		update_lives_switch = UpdateLives (stats);
+	}
+	while (!update_lives_switch);
+	
+	var updates = setTimeout (function update_check ()
+	{
+		
+		var life_lost_switch = false;
+
+		$("body").keydown(function(e) {
+			if(e.keyCode === 37 || e.which === 37) { // left
+				ring_props.speed = ring_props.speed - 0.25;
+				if (ring_props.speed < -6)
+				{
+					ring_props.speed = -6;
+				}
+			}
+			else if(e.keyCode === 39 || e.which === 39) { // right
+				ring_props.speed = ring_props.speed + 0.25;
+				if (ring_props.speed > 6)
+				{
+					ring_props.speed = 6;
+				}
+			}
+		});
+		if (ring_props.speed < 0)
+		{
+			ring_props.speed = ring_props.speed + 0.5;
+		}
+		else if (ring_props.speed > 0)
+		{
+			ring_props.speed = ring_props.speed - 0.5;
+		}
+		
+		ring_props.tilt = ring_props.tilt + ring_props.speed;
+		if (ring_props.tilt < 0)
+		{
+			ring_props.tilt = ring_props.tilt + 360;
+		}
+		else if (ring_props.tilt >= 360)
+		{
+			ring_props.tilt = ring_props.tilt - 360;
+		}
+		var update_tiles_switch = false;
+		update_tiles_switch = UpdateTiles (ring, ring_props, stats);
+		
+		var dist = Math.round(Math.sqrt((ball.x ** 2) + (ball.y ** 2)));
+		
+		if (dist >= 150)
+		{
+			for (var r = 0; r < ring.length; r++)
+			{
+				var canvas02 = document.getElementById("tile_set");
+				var ctx02 = canvas02.getContext("2d");
+				
+				ctx02.beginPath();
+				ctx02.strokeStyle = "black";
+				ctx02.moveTo(Math.round(ring[r].p1[0]), Math.round(ring[r].p1[1]));
+				ctx02.lineTo(Math.round(ring[r].p2[0]), Math.round(ring[r].p2[1]));
+				ctx02.lineTo(Math.round(ring[r].p4[0]), Math.round(ring[r].p4[1]));
+				ctx02.lineTo(Math.round(ring[r].p3[0]), Math.round(ring[r].p3[1]));
+				
+				if (
+					ctx02.isPointInPath(ball.x + x_offset, ball.y + y_offset) && grace_tick === true
+				)
+				{
+					
+					grace_tick = false;
+					
+					var tile_rad = Math.atan2(ring[r].p4[1] - ring[r].p3[1], ring[r].p4[0] - ring[r].p3[0]);
+					var tile_angle = Math.round(tile_rad * 180 / Math.PI);
+					if (tile_angle < 0)
+					{
+						tile_angle = tile_angle + 360;
+					}
+					else if (tile_angle >= 360)
+					{
+						tile_angle = tile_angle - 360;
+					}
+					
+					var tile_perp_angle_in = tile_angle + 270;
+					if (tile_perp_angle_in < 0)
+					{
+						tile_perp_angle_in = tile_perp_angle_in + 360;
+					}
+					else if (tile_perp_angle_in >= 360)
+					{
+						tile_perp_angle_in = tile_perp_angle_in - 360;
+					}
+										
+					var tile_perp_angle_out = tile_perp_angle_in - 180;
+					if (tile_perp_angle_out < 0)
+					{
+						tile_perp_angle_out = tile_perp_angle_out + 360;
+					}
+					else if (tile_perp_angle_out >= 360)
+					{
+						tile_perp_angle_out = tile_perp_angle_out - 360;
+					}
+					
+					var ball_angle_in = ball.angle;
+					var ball_angle_out = ball.angle + 180;
+					if (ball_angle_out < 0)
+					{
+						ball_angle_out = ball_angle_out + 360;
+					}
+					else if (ball_angle_out >= 360)
+					{
+						ball_angle_out = ball_angle_out - 360;
+					}				
+					
+					if (ball_angle_out >= tile_perp_angle_out)
+					{
+						var angle_inc = Math.abs(tile_perp_angle_out - ball_angle_out);
+						if (angle_inc < 0)
+						{
+							angle_inc = angle_inc + 360;
+						}
+						else if (angle_inc >= 360)
+						{
+							angle_inc = angle_inc - 360;
+						}
+						ball.angle = tile_perp_angle_out - angle_inc;
+					}
+					else if (ball_angle_out < tile_perp_angle_out)
+					{
+						var angle_inc = Math.abs(tile_perp_angle_out - ball_angle_out);
+						if (angle_inc < 0)
+						{
+							angle_inc = angle_inc + 360;
+						}
+						else if (angle_inc >= 360)
+						{
+							angle_inc = angle_inc - 360;
+						}
+						ball.angle = tile_perp_angle_out + angle_inc;
+					}
+					
+					if (ball.angle < 0)
+					{
+						ball.angle = ball.angle + 360;
+					}
+					else if (ball.angle >= 360)
+					{
+						ball.angle = ball.angle - 360;
+					}
+					
+					ctx02.closePath();
+					
+					if (ring[r].index === ring_props.note_value_1)
+					{
+						do 
+						{
+							ring_props.note_value_1 = Math.floor(Math.random() * 11);
+						}
+						while (ring_props.note_value_1 === ring_props.note_value_2 || ring_props.note_value_1 === ring_props.note_value_3 || ring_props.note_value_1 === ring[r].index);
+						stats.score = stats.score + 100;
+						PlayAudio(ring[r].name, 0.01 * (Math.floor(Math.random() * 20) + 70));
+						var update_score_switch = false;
+						do
+						{
+							update_score_switch = UpdateScore (stats);
+						}
+						while (!update_score_switch);
+					}
+					else if (ring[r].index === ring_props.note_value_2)
+					{
+						do 
+						{
+							ring_props.note_value_2 = Math.floor(Math.random() * 11);
+						}
+						while (ring_props.note_value_1 === ring_props.note_value_2 || ring_props.note_value_2 === ring_props.note_value_3 || ring_props.note_value_2 === ring[r].index);
+						stats.score = stats.score + 100;
+						PlayAudio(ring[r].name, 0.01 * (Math.floor(Math.random() * 20) + 70));
+						var update_score_switch = false;
+						do
+						{
+							update_score_switch = UpdateScore (stats);
+						}
+						while (!update_score_switch);
+					}
+					else if (ring[r].index === ring_props.note_value_3)
+					{
+						do 
+						{
+							ring_props.note_value_3 = Math.floor(Math.random() * 11);
+						}
+						while (ring_props.note_value_1 === ring_props.note_value_3 || ring_props.note_value_2 === ring_props.note_value_3 || ring_props.note_value_3 === ring[r].index);
+						stats.score = stats.score + 100;
+						PlayAudio(ring[r].name, 0.01 * (Math.floor(Math.random() * 20) + 70));
+						var update_score_switch = false;
+						do
+						{
+							update_score_switch = UpdateScore (stats);
+						}
+						while (!update_score_switch);
+					}
+					else
+					{
+						stats.lives = stats.lives - 1;
+						PlaySound("Scratch.mp3", 0.5);
+						var update_lives_switch = false;
+						do
+						{
+							update_lives_switch = UpdateLives (stats);
+						}
+						while (!update_lives_switch);
+						life_lost_switch = true;
+					}
+					
+					setTimeout(function ()
+					{
+						grace_tick = true;
+					}, 100);
+					
+					break;
+					
+				}
+				ctx02.closePath();
+				
+			}
+			
+		}
+			
+		if (dist < 250 && stats.lives > 0)
+		{
+			if (life_lost_switch) 
+			{
+				ball.x = 0;
+				ball.y = 0;
+				var create_ball_switch = false;
+				do {
+					create_ball_switch = CreateBall();
+				}
+				while (!create_ball_switch);
+				setTimeout( function () {
+					setTimeout(update_check, 50);
+				}, 1500);
+			}
+			else 
+			{
+				ball.x = ball.x + (ball.velocity * Math.cos(ball.angle * Math.PI / 180));
+				ball.y = ball.y + (ball.velocity * Math.sin(ball.angle * Math.PI / 180));
+				tick = tick + 1;
+				var update_ball_switch = false;
+				do
+				{
+					update_ball_switch = UpdateBall(ball.x, ball.y);
+				}
+				while (!update_ball_switch);
+				setTimeout(update_check, 50);
+			}
+		}
+		else
+		{
+			clearTimeout (updates);
+			if (stats.lives === 0)
+			{
+				var start_switch = false;
+				var canvas05 = document.getElementById("interface");
+				var ctx05 = canvas05.getContext("2d");
+				
+				ctx05.font = "bold 32px sans-serif";
+				ctx05.fillStyle = "black";
+				ctx05.textAlign = "center";
+				ctx05.textBaseline = "middle";
+				ctx05.fillText("GAME OVER", x_offset, y_offset - 50);
+				ctx05.fillText("PRESS SPACE TO CONTINUE", x_offset, y_offset + 50);
+				
+				$("body").keydown(function(e) {
+					if(e.keyCode === 32 || e.which === 32) {
+						
+						if (start_switch === false)
+						{
+							Initiate ();
+						}
+						start_switch = true;
+						
+					}
+
+				});
+			}
+		}
+	}, 50);
+	
+}
+
+function Initiate()
+{
+
+	var canvas05 = document.getElementById("interface");
+	var ctx05 = canvas05.getContext("2d");
+	ctx05.clearRect(0, 0, canvas05.width, canvas05.height);
+	
+	var canvas04 = document.getElementById("player");
+	var ctx04 = canvas04.getContext("2d");
+	ctx04.clearRect(0, 0, canvas04.width, canvas04.height);
+	
+	var canvas03 = document.getElementById("popups");
+	var ctx03 = canvas03.getContext("2d");
+	ctx03.clearRect(0, 0, canvas03.width, canvas03.height);
+	
+	var canvas02 = document.getElementById("tile_set");
+	var ctx02 = canvas02.getContext("2d");
+	ctx02.clearRect(0, 0, canvas02.width, canvas02.height);
+	
+	var canvas01 = document.getElementById("background");
+	var ctx01 = canvas01.getContext("2d");
+	ctx01.clearRect(0, 0, canvas01.width, canvas01.height);
+
+	var stats = {
+		"score": 0,
+		"lives": 5
+	}
+
+	var ring_props = {
+		"tilt": 0,
+		"speed": 0,
+		"note_value_1": -1,
+		"note_value_2": -1,
+		"note_value_3": -1
+	}
+		
+	var ring = [
+		{
+			"name": "A",
+			"midi": 57,
+			"index": 0,
+			"angle_min": 0,
+			"angle_max": 30,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "A#/Bb",
+			"midi": 58,
+			"index": 1,
+			"angle_min": 30,
+			"angle_max": 60,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "B",
+			"midi": 59,
+			"index": 2,
+			"angle_min": 60,
+			"angle_max": 90,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "C",
+			"midi": 60,
+			"index": 3,
+			"angle_min": 90,
+			"angle_max": 120,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "C#/Db",
+			"midi": 61,
+			"index": 4,
+			"angle_min": 120,
+			"angle_max": 150,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "D",
+			"midi": 62,
+			"index": 5,
+			"angle_min": 150,
+			"angle_max": 180,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "D#/Eb",
+			"midi": 63,
+			"index": 6,
+			"angle_min": 180,
+			"angle_max": 210,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "E",
+			"midi": 64,
+			"index": 7,
+			"angle_min": 210,
+			"angle_max": 240,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "F",
+			"midi": 65,
+			"index": 8,
+			"angle_min": 240,
+			"angle_max": 270,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "F#/Gb",
+			"midi": 66,
+			"index": 9,
+			"angle_min": 270,
+			"angle_max": 300,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "G",
+			"midi": 67,
+			"index": 10,
+			"angle_min": 300,
+			"angle_max": 330,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		},
+		{
+			"name": "G#/Ab",
+			"midi": 68,
+			"index": 11,
+			"angle_min": 330,
+			"angle_max": 360,
+			"p1": [-1, -1],
+			"p2": [-1, -1],
+			"p3": [-1, -1],
+			"p4": [-1, -1],
+			"life": 25
+		}
+	]
+
+	var ball = {
+		"x": 0,
+		"y": 0,
+		"angle": Math.floor(Math.random() * 360),
+		"velocity": 8,
+		"direction_x": 1,
+		"direction_y": 1,
+		"state": "alive"
+	}
+
+	var create_tiles_switch = false;
+	do {
+		create_tiles_switch = CreateTiles(ring, ring_props, stats);
+	}
+	while (!create_tiles_switch);
+	
+	var create_score_switch = false;
+	do {
+		create_score_switch = CreateScore(stats);
+	}
+	while (!create_score_switch);
+	
+	var create_lives_switch = false;
+	do {
+		create_lives_switch = CreateLives(stats);
+	}
+	while (!create_lives_switch);
+	
+	ring_props.note_value_1 = Math.floor(Math.random() * 11);
+	do
+	{
+		ring_props.note_value_2 = Math.floor(Math.random() * 11);
+	}
+	while (ring_props.note_value_2 === ring_props.note_value_1);
+	
+	do
+	{
+		ring_props.note_value_3 = Math.floor(Math.random() * 11);
+	}
+	while (ring_props.note_value_3 === ring_props.note_value_1 || ring_props.note_value_3 === ring_props.note_value_2);
+	
+	var start_switch = false;
+	var canvas05 = document.getElementById("interface");
+	var ctx05 = canvas05.getContext("2d");
+	
+	ctx05.font = "bold 32px sans-serif";
+	ctx05.fillStyle = "black";
+	ctx05.textAlign = "center";
+	ctx05.textBaseline = "middle";
+	ctx05.fillText("12VOLVUS", x_offset, y_offset - 50);
+	ctx05.fillText("PRESS SPACE TO START", x_offset, y_offset);
+	ctx05.fillText("PRESS LEFT OR RIGHT TO SPIN", x_offset, y_offset + 50);
+	
+	var start_switch = false;
+	$("body").keydown(function(e) {
+		if(e.keyCode === 32 || e.which === 32) { 
+			
+			if (start_switch === false)
+			{
+				var canvas05 = document.getElementById("interface");
+				var ctx05 = canvas05.getContext("2d");
+				ctx05.clearRect(0, 0, canvas05.width, canvas05.height);
+				
+				var create_ball_switch = false;
+				do {
+					create_ball_switch = CreateBall();
+				}
+				while (!create_ball_switch);
+				setTimeout( function () {
+					Start(ring, ring_props, ball, stats);
+				}, 1500);
+			}
+			start_switch = true;
+			
+		}
+	
+	});
+}
+
+function PlayAudio(note, vol) {
+	var url = "";
+	if (note === "A")
+	{
+		url = "Dulcimer A 3.mp3";
+	}
+	else if (note === "A#/Bb")
+	{
+		url = "Dulcimer A-B 3.mp3";
+	}
+	else if (note === "B")
+	{
+		url = "Dulcimer B 3.mp3";
+	}
+	else if (note === "C")
+	{
+		url = "Dulcimer C 4.mp3";
+	}
+	else if (note === "C#/Db")
+	{
+		url = "Dulcimer C-D 4.mp3";
+	}
+	else if (note === "D")
+	{
+		url = "Dulcimer D 4.mp3";
+	}
+	else if (note === "D#/Eb")
+	{
+		url = "Dulcimer D-E 4.mp3";
+	}
+	else if (note === "E")
+	{
+		url = "Dulcimer E 4.mp3";
+	}
+	else if (note === "F")
+	{
+		url = "Dulcimer F 4.mp3";
+	}
+	else if (note === "F#/Gb")
+	{
+		url = "Dulcimer F-G 4.mp3";
+	}
+	else if (note === "G")
+	{
+		url = "Dulcimer G 4.mp3";
+	}
+	else if (note === "G#/Ab")
+	{
+		url = "Dulcimer G-A 4.mp3";
+	}
+	
+    var audio = document.createElement('audio');
+    audio.src = url;
+    audio.volume = vol;
+    audio.style.display = "none";
+    audio.autoplay = true;
+    audio.onended = function() {
+        audio.remove();
+    };
+    document.body.appendChild(audio);
+}
+
+function PlaySound(sound, vol) {
+	var url = sound;
+	
+    var audio = document.createElement('audio');
+    audio.src = url;
+    audio.volume = vol;
+    audio.style.display = "none";
+    audio.autoplay = true;
+    audio.onended = function() {
+        audio.remove();
+    };
+    document.body.appendChild(audio);
+}
+
+Initiate ();
+
+</script>
